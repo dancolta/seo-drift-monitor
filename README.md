@@ -38,6 +38,8 @@ Think of it like git for SEO. You **baseline** a page when it's in a good state,
 
 ## What Gets Captured
 
+Intentionally focused on the elements most commonly broken by deploys, CMS updates, and content edits. No full crawl, no content quality analysis, no image audits — just the things that silently tank rankings when someone changes them without checking.
+
 Every baseline stores:
 
 | Element | Detail |
