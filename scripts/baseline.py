@@ -3,7 +3,7 @@
 Capture a baseline snapshot of a page's SEO-critical elements.
 
 Stores title, meta tags, canonical, headings, schema/JSON-LD, OG tags,
-Core Web Vitals, and a full-page screenshot as a "known good" state.
+and Core Web Vitals as a "known good" state.
 
 Usage:
     python baseline.py <url>
@@ -24,11 +24,9 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPTS_DIR)
 
 from parse_html import parse_html
-from capture_screenshot import capture_screenshot
 from cwv import fetch_cwv
 from db import (
-    normalize_url, url_hash, save_baseline,
-    SCREENSHOTS_DIR, init_db,
+    normalize_url, url_hash, save_baseline, init_db,
 )
 
 
@@ -72,14 +70,13 @@ def fetch_page_safe(url: str) -> dict:
                 "headers": {}, "redirect_chain": [], "error": str(e)}
 
 
-def capture_baseline(url: str, skip_cwv: bool = False, skip_screenshot: bool = False) -> dict:
+def capture_baseline(url: str, skip_cwv: bool = False) -> dict:
     """
     Capture a complete baseline snapshot of a URL.
 
     Args:
         url: The URL to baseline
         skip_cwv: Skip PageSpeed Insights API call (faster, for testing)
-        skip_screenshot: Skip Playwright screenshot (faster, for testing)
 
     Returns:
         Dictionary with baseline data including the saved ID.
@@ -109,20 +106,7 @@ def capture_baseline(url: str, skip_cwv: bool = False, skip_screenshot: bool = F
     schema_canonical = json.dumps(parsed["schema"], sort_keys=True)
     schema_hash = hashlib.sha256(schema_canonical.encode()).hexdigest()
 
-    # 4. Screenshot
-    screenshot_path = None
-    if not skip_screenshot:
-        print("  Capturing screenshot...", file=sys.stderr)
-        screenshot_filename = f"{uhash}_{now.replace(':', '-')}_baseline.png"
-        screenshot_path = os.path.join(SCREENSHOTS_DIR, screenshot_filename)
-        ss_result = capture_screenshot(
-            normalized, screenshot_path, viewport="desktop", full_page=True
-        )
-        if not ss_result["success"]:
-            print(f"  [WARN] Screenshot failed: {ss_result['error']}", file=sys.stderr)
-            screenshot_path = None
-
-    # 5. Core Web Vitals
+    # 4. Core Web Vitals
     cwv = None
     if not skip_cwv:
         print("  Fetching Core Web Vitals...", file=sys.stderr)
@@ -132,7 +116,7 @@ def capture_baseline(url: str, skip_cwv: bool = False, skip_screenshot: bool = F
         else:
             print("  [WARN] CWV data unavailable", file=sys.stderr)
 
-    # 6. Build baseline data
+    # 5. Build baseline data
     headings = {
         "h1": parsed["h1"],
         "h2": parsed["h2"],
@@ -153,11 +137,11 @@ def capture_baseline(url: str, skip_cwv: bool = False, skip_screenshot: bool = F
         "schema_hash": schema_hash,
         "open_graph": parsed["open_graph"],
         "cwv": cwv,
-        "screenshot_path": screenshot_path,
+        "screenshot_path": None,
         "status_code": status_code,
     }
 
-    # 7. Save to database
+    # 6. Save to database
     baseline_id = save_baseline(baseline_data)
     baseline_data["id"] = baseline_id
 
@@ -195,7 +179,6 @@ def format_summary(data: dict) -> dict:
         "robots": data.get("robots"),
         "og_tags": len(data.get("open_graph", {})),
         "status_code": data.get("status_code"),
-        "screenshot": data.get("screenshot_path"),
     }
 
     if data.get("cwv"):
@@ -212,13 +195,12 @@ def format_summary(data: dict) -> dict:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python baseline.py <url> [--skip-cwv] [--skip-screenshot]")
+        print("Usage: python baseline.py <url> [--skip-cwv]")
         sys.exit(1)
 
     target_url = sys.argv[1]
     skip_cwv = "--skip-cwv" in sys.argv
-    skip_ss = "--skip-screenshot" in sys.argv
 
-    result = capture_baseline(target_url, skip_cwv=skip_cwv, skip_screenshot=skip_ss)
+    result = capture_baseline(target_url, skip_cwv=skip_cwv)
     summary = format_summary(result)
     print(json.dumps(summary, indent=2))

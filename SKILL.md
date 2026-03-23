@@ -41,14 +41,12 @@ When the user runs `/seo-drift baseline <url>`:
    Robots: [robots or "none"]
    OG Tags: [og_tags count]
    CWV: [score]/100 (LCP: [lcp]s, FCP: [fcp]s, CLS: [cls])
-   Screenshot: [screenshot path]
    ```
 
 3. If the script returns an error, display it and suggest fixes.
 
 **Optional flags:**
 - Add `--skip-cwv` to skip the PageSpeed Insights API call (faster)
-- Add `--skip-screenshot` to skip the Playwright screenshot (faster)
 
 ## Check Workflow
 
@@ -140,7 +138,6 @@ When the user runs `/seo-drift history <url>`:
 ## Data Storage
 
 - Database: `~/.claude/seo-drift/baselines.db` (SQLite)
-- Screenshots: `~/.claude/seo-drift/screenshots/`
 - Reports: `~/.claude/seo-drift/reports/`
 
 ## Dependencies
@@ -149,10 +146,9 @@ This skill requires:
 - Python 3.10+
 - `requests` (for HTTP fetching)
 - `beautifulsoup4` (for HTML parsing)
-- `playwright` (for screenshots)
 - `curl` (for PageSpeed Insights API)
 
-Install: `pip install requests beautifulsoup4 playwright && playwright install chromium`
+Install: `pip install requests beautifulsoup4`
 
 ## Integration with claude-seo
 
@@ -160,5 +156,4 @@ This skill extends the [claude-seo](https://github.com/AgriciDaniel/claude-seo) 
 
 - Uses `seo/scripts/fetch_page.py` for HTTP fetching with SSRF prevention
 - Uses `seo/scripts/parse_html.py` for SEO element extraction
-- Uses `seo/scripts/capture_screenshot.py` for Playwright screenshots
 - Recommends `seo-schema`, `seo-technical`, and `seo-page` skills for fixing detected issues

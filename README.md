@@ -50,7 +50,6 @@ Every baseline stores:
 | Schema/JSON-LD | All structured data blocks, parsed + hashed |
 | Open Graph | All og:* tags |
 | Core Web Vitals | Score, LCP, FCP, CLS, TBT (via PageSpeed Insights API) |
-| Screenshot | Full-page desktop capture (Playwright) |
 | Status Code | HTTP response |
 
 Stored in a local SQLite database at `~/.claude/seo-drift/baselines.db`.
@@ -95,11 +94,10 @@ Every change detected by `/seo-drift check` is classified:
 
 Every check generates an HTML report:
 
-- Side-by-side screenshots (baseline vs current)
-- Color-coded diff table (red/amber/green)
+- Severity summary cards (at-a-glance counts)
+- Color-coded change list (red/amber/green) with before/after values in monospace
 - Fix recommendations per change
 - CWV comparison bars with percentage changes
-- Summary severity counts
 
 ```
 +--------------------------------------------------+
@@ -107,16 +105,18 @@ Every check generates an HTML report:
 |  Baseline: Mar 20  ->  Check: Mar 22             |
 |  2 CRITICAL | 1 WARNING | 1 INFO                 |
 +--------------------------------------------------+
-|  [Baseline Screenshot]  [Current Screenshot]      |
-+--------------------------------------------------+
 |  [RED]   Schema removed: Organization             |
+|          Before: present  After: Removed           |
 |  [RED]   H1: "Welcome" -> "New Homepage"          |
 |  [AMBER] LCP: 3.2s -> 4.1s (+28%)                |
 |  [GREEN] Content updated                          |
 +--------------------------------------------------+
+|  CWV: Score 72 -> 58 (-14pts)                    |
+|       LCP  3.2s -> 4.1s  [=========>]  +28%     |
++--------------------------------------------------+
 ```
 
-Reports are self-contained HTML (screenshots as base64, inline CSS). Open in any browser.
+Self-contained HTML with inline CSS. No screenshots needed — all changes are code/backend elements shown as structured data. Open in any browser.
 
 ---
 
@@ -167,8 +167,7 @@ Checks:
 
 ```bash
 # Install dependencies
-pip install requests beautifulsoup4 playwright
-playwright install chromium
+pip install requests beautifulsoup4
 
 # Install the skill
 git clone https://github.com/dancolta/seo-drift-monitor.git ~/.claude/skills/seo-drift
@@ -183,7 +182,6 @@ Immediately available -- Claude Code auto-discovers skills in `~/.claude/skills/
 **Reuses claude-seo infrastructure:**
 - `seo/scripts/fetch_page.py` -- HTTP fetching with SSRF prevention
 - `seo/scripts/parse_html.py` -- SEO element extraction
-- `seo/scripts/capture_screenshot.py` -- Playwright screenshots
 
 **Cross-references claude-seo skills for fixes:**
 - Schema issues -> `/seo-schema`
@@ -218,7 +216,6 @@ OFFENSIVE (optimize)          DEFENSIVE (protect)
 
 ~/.claude/seo-drift/              # Runtime data (auto-created)
     baselines.db                   # SQLite database
-    screenshots/                   # Captured screenshots
     reports/                       # Generated HTML reports
 ```
 
@@ -236,7 +233,6 @@ OFFENSIVE (optimize)          DEFENSIVE (protect)
 
 - Extension for [claude-seo](https://github.com/AgriciDaniel/claude-seo) by [@AgriciDaniel](https://github.com/AgriciDaniel)
 - [PageSpeed Insights API](https://developers.google.com/speed/docs/insights/v5/get-started) for Core Web Vitals
-- [Playwright](https://playwright.dev/) for screenshots
 - Built by [Dan Colta](https://github.com/dancolta) at [NodeSparks](https://nodesparks.com)
 
 ## License

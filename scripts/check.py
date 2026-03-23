@@ -24,11 +24,9 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPTS_DIR)
 
 from parse_html import parse_html
-from capture_screenshot import capture_screenshot
 from cwv import fetch_cwv
 from db import (
-    normalize_url, url_hash, get_latest_baseline, save_check,
-    SCREENSHOTS_DIR, init_db,
+    normalize_url, url_hash, get_latest_baseline, save_check, init_db,
 )
 from report import generate_drift_report
 
@@ -72,7 +70,7 @@ def fetch_page_safe(url: str) -> dict:
                 "headers": {}, "redirect_chain": [], "error": str(e)}
 
 
-def run_check(url: str, skip_cwv: bool = False, skip_screenshot: bool = False) -> dict:
+def run_check(url: str, skip_cwv: bool = False) -> dict:
     """
     Check a URL against its most recent baseline.
 
@@ -81,7 +79,6 @@ def run_check(url: str, skip_cwv: bool = False, skip_screenshot: bool = False) -
     """
     init_db()
     normalized = normalize_url(url)
-    uhash = url_hash(normalized)
     now = datetime.now(timezone.utc).isoformat()
 
     # 1. Load baseline
@@ -109,18 +106,7 @@ def run_check(url: str, skip_cwv: bool = False, skip_screenshot: bool = False) -
     schema_canonical = json.dumps(parsed["schema"], sort_keys=True)
     schema_hash = hashlib.sha256(schema_canonical.encode()).hexdigest()
 
-    # 4. Screenshot current state
     screenshot_path = None
-    if not skip_screenshot:
-        print("  Capturing screenshot...", file=sys.stderr)
-        screenshot_filename = f"{uhash}_{now.replace(':', '-')}_check.png"
-        screenshot_path = os.path.join(SCREENSHOTS_DIR, screenshot_filename)
-        ss_result = capture_screenshot(
-            normalized, screenshot_path, viewport="desktop", full_page=True
-        )
-        if not ss_result["success"]:
-            print(f"  [WARN] Screenshot failed: {ss_result['error']}", file=sys.stderr)
-            screenshot_path = None
 
     # 5. CWV
     cwv = None
@@ -432,12 +418,11 @@ def _normalize_for_compare(url_str: str) -> str:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python check.py <url> [--skip-cwv] [--skip-screenshot]")
+        print("Usage: python check.py <url> [--skip-cwv]")
         sys.exit(1)
 
     target_url = sys.argv[1]
     skip_cwv = "--skip-cwv" in sys.argv
-    skip_ss = "--skip-screenshot" in sys.argv
 
-    result = run_check(target_url, skip_cwv=skip_cwv, skip_screenshot=skip_ss)
+    result = run_check(target_url, skip_cwv=skip_cwv)
     print(json.dumps(result, indent=2))
