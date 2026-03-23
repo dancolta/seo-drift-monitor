@@ -23,7 +23,6 @@ sys.path.insert(0, SEO_SCRIPTS_DIR)
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPTS_DIR)
 
-from fetch_page import fetch_page
 from parse_html import parse_html
 from capture_screenshot import capture_screenshot
 from cwv import fetch_cwv
@@ -31,6 +30,46 @@ from db import (
     normalize_url, url_hash, save_baseline,
     SCREENSHOTS_DIR, init_db,
 )
+
+
+def fetch_page_safe(url: str) -> dict:
+    """Fetch a page with requests first, fallback to curl on SSL errors."""
+    try:
+        from fetch_page import fetch_page
+        result = fetch_page(url)
+        if result.get("error") and "SSL" in str(result["error"]):
+            raise Exception("SSL error, falling back to curl")
+        return result
+    except Exception:
+        pass
+    # Fallback: curl -sk (same approach as the outreach scanner)
+    import subprocess
+    try:
+        proc = subprocess.run(
+            ["curl", "-sk", "-L", "--max-redirs", "5", "-o", "-",
+             "-w", "\n%{http_code}\n%{url_effective}", url],
+            capture_output=True, text=True, timeout=30,
+        )
+        parts = proc.stdout.rsplit("\n", 2)
+        if len(parts) >= 3:
+            content = parts[0]
+            status_code = int(parts[1]) if parts[1].strip().isdigit() else 200
+            final_url = parts[2].strip() or url
+        else:
+            content = proc.stdout
+            status_code = 200
+            final_url = url
+        return {
+            "url": final_url,
+            "status_code": status_code,
+            "content": content,
+            "headers": {},
+            "redirect_chain": [],
+            "error": None,
+        }
+    except Exception as e:
+        return {"url": url, "status_code": None, "content": None,
+                "headers": {}, "redirect_chain": [], "error": str(e)}
 
 
 def capture_baseline(url: str, skip_cwv: bool = False, skip_screenshot: bool = False) -> dict:
@@ -54,7 +93,7 @@ def capture_baseline(url: str, skip_cwv: bool = False, skip_screenshot: bool = F
 
     # 1. Fetch HTML
     print("  Fetching page...", file=sys.stderr)
-    fetch_result = fetch_page(normalized)
+    fetch_result = fetch_page_safe(normalized)
     if fetch_result["error"]:
         return {"error": f"Failed to fetch page: {fetch_result['error']}"}
 
