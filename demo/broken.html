@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- BROKEN: Title changed from keyword-rich to generic -->
+    <title>Home - Acme</title>
+    <!-- BROKEN: Description changed to vague copy -->
+    <meta name="description" content="Welcome to our website. We offer various services.">
+    <!-- BROKEN: noindex added (accidentally left from staging) -->
+    <meta name="robots" content="noindex, nofollow">
+    <!-- BROKEN: canonical removed entirely -->
+    <!-- BROKEN: og:image and og:type removed -->
+    <meta property="og:title" content="Home - Acme">
+    <meta property="og:description" content="Welcome to our website.">
+    <meta property="og:url" content="http://localhost:8111/">
+    <!-- BROKEN: Organization schema completely removed -->
+    <!-- Only WebSite schema remains, but modified -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Acme",
+        "url": "http://localhost:8111"
+    }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a2e; line-height: 1.6; }
+        .hero { background: linear-gradient(135deg, #1a1a2e, #2d2d5e); color: white; padding: 80px 40px; text-align: center; }
+        /* BROKEN: H1 changed to generic text, no keywords */
+        .hero h2 { font-size: 48px; margin-bottom: 16px; }
+        .hero p { font-size: 20px; opacity: 0.85; max-width: 600px; margin: 0 auto; }
+        .services { padding: 60px 40px; max-width: 960px; margin: 0 auto; }
+        .services h2 { font-size: 32px; margin-bottom: 32px; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .card { background: #f8f9fa; padding: 28px; border-radius: 12px; }
+        .card h3 { font-size: 20px; margin-bottom: 8px; }
+        .card p { color: #555; font-size: 15px; }
+        .cta { background: #1a1a2e; color: white; padding: 60px 40px; text-align: center; }
+        .cta h2 { font-size: 28px; margin-bottom: 12px; }
+        .cta p { opacity: 0.8; margin-bottom: 24px; }
+        .btn { display: inline-block; background: #6c63ff; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+        footer { padding: 24px 40px; text-align: center; color: #999; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <!-- BROKEN: H1 replaced with H2, text changed to generic -->
+        <h2>Welcome to Our New Website</h2>
+        <p>We provide solutions for your business needs.</p>
+    </section>
+
+    <section class="services">
+        <h2>What We Do</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Design</h3>
+                <p>Beautiful, responsive websites built for performance and conversion.</p>
+            </div>
+            <div class="card">
+                <h3>SEO</h3>
+                <p>Data-driven SEO strategies that increase organic traffic and rankings.</p>
+            </div>
+            <div class="card">
+                <h3>Marketing</h3>
+                <p>Targeted campaigns across search, social, and email channels.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <h2>Get In Touch</h2>
+        <p>Reach out to learn more about what we can do.</p>
+        <a href="/contact" class="btn">Contact Us</a>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Acme. All rights reserved.</p>
+    </footer>
+</body>
+</html>
