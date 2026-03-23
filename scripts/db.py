@@ -48,29 +48,87 @@ def url_hash(url: str) -> str:
     return hashlib.sha256(normalize_url(url).encode()).hexdigest()[:16]
 
 
+def _get_existing_columns(conn: sqlite3.Connection, table: str) -> set:
+    """Return the set of column names for an existing table."""
+    cursor = conn.execute(f"PRAGMA table_info({table})")
+    return {row[1] for row in cursor.fetchall()}
+
+
+def _migrate_table(conn: sqlite3.Connection, table: str, expected_columns: dict):
+    """Add any missing columns to an existing table.
+
+    Args:
+        conn: SQLite connection
+        table: Table name
+        expected_columns: Mapping of column_name -> column_definition (e.g. "TEXT NOT NULL DEFAULT ''")
+    """
+    existing = _get_existing_columns(conn, table)
+    if not existing:
+        return  # Table doesn't exist yet; CREATE TABLE will handle it
+    for col_name, col_def in expected_columns.items():
+        if col_name not in existing:
+            # SQLite ALTER TABLE ADD COLUMN requires a default for NOT NULL columns
+            safe_def = col_def.replace("NOT NULL", "NOT NULL DEFAULT ''")
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {safe_def}")
+
+
 def init_db():
-    """Create database and tables if they don't exist."""
+    """Create database and tables if they don't exist. Migrates schema for upgrades."""
     os.makedirs(DB_DIR, exist_ok=True)
     os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
     os.makedirs(REPORTS_DIR, exist_ok=True)
 
     conn = sqlite3.connect(DB_PATH)
     conn.execute("PRAGMA journal_mode=WAL")
+
+    # --- Migrate existing tables before CREATE TABLE IF NOT EXISTS ---
+    try:
+        existing_tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+    except sqlite3.Error:
+        existing_tables = set()
+
+    if "baselines" in existing_tables:
+        _migrate_table(conn, "baselines", {
+            "url_hash": "TEXT NOT NULL DEFAULT ''",
+            "html_hash": "TEXT NOT NULL DEFAULT ''",
+            "schema_hash": "TEXT NOT NULL DEFAULT ''",
+            "meta_description": "TEXT",
+            "og_json": "TEXT NOT NULL DEFAULT '{}'",
+            "cwv_json": "TEXT",
+            "screenshot_path": "TEXT",
+            "status_code": "INTEGER",
+        })
+
+    if "checks" in existing_tables:
+        _migrate_table(conn, "checks", {
+            "url": "TEXT NOT NULL DEFAULT ''",
+            "screenshot_path": "TEXT",
+            "report_path": "TEXT",
+        })
+
+    conn.commit()
+
+    # --- Create tables (no-op if they already exist after migration) ---
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS baselines (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             url             TEXT NOT NULL,
-            url_hash        TEXT NOT NULL,
+            url_hash        TEXT NOT NULL DEFAULT '',
             created_at      TEXT NOT NULL,
-            html_hash       TEXT NOT NULL,
+            html_hash       TEXT NOT NULL DEFAULT '',
             title           TEXT,
             meta_description TEXT,
             canonical       TEXT,
             robots          TEXT,
             headings_json   TEXT NOT NULL,
             schema_json     TEXT NOT NULL,
-            schema_hash     TEXT NOT NULL,
-            og_json         TEXT NOT NULL,
+            schema_hash     TEXT NOT NULL DEFAULT '',
+            og_json         TEXT NOT NULL DEFAULT '{}',
             cwv_json        TEXT,
             screenshot_path TEXT,
             status_code     INTEGER
@@ -82,7 +140,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS checks (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             baseline_id     INTEGER NOT NULL REFERENCES baselines(id),
-            url             TEXT NOT NULL,
+            url             TEXT NOT NULL DEFAULT '',
             checked_at      TEXT NOT NULL,
             diffs_json      TEXT NOT NULL,
             screenshot_path TEXT,

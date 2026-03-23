@@ -6,3 +6,4 @@ __pycache__/
 screenshots/
 reports/
 .DS_Store
+.vercel
