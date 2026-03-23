@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""
+Capture a baseline snapshot of a page's SEO-critical elements.
+
+Stores title, meta tags, canonical, headings, schema/JSON-LD, OG tags,
+Core Web Vitals, and a full-page screenshot as a "known good" state.
+
+Usage:
+    python baseline.py <url>
+"""
+
+import hashlib
+import json
+import os
+import sys
+from datetime import datetime, timezone
+
+# Add parent seo scripts to path for imports
+SEO_SCRIPTS_DIR = os.path.expanduser("~/.claude/skills/seo/scripts")
+sys.path.insert(0, SEO_SCRIPTS_DIR)
+
+# Add local scripts dir
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPTS_DIR)
+
+from fetch_page import fetch_page
+from parse_html import parse_html
+from capture_screenshot import capture_screenshot
+from cwv import fetch_cwv
+from db import (
+    normalize_url, url_hash, save_baseline,
+    SCREENSHOTS_DIR, init_db,
+)
+
+
+def capture_baseline(url: str, skip_cwv: bool = False, skip_screenshot: bool = False) -> dict:
+    """
+    Capture a complete baseline snapshot of a URL.
+
+    Args:
+        url: The URL to baseline
+        skip_cwv: Skip PageSpeed Insights API call (faster, for testing)
+        skip_screenshot: Skip Playwright screenshot (faster, for testing)
+
+    Returns:
+        Dictionary with baseline data including the saved ID.
+    """
+    init_db()
+    normalized = normalize_url(url)
+    uhash = url_hash(normalized)
+    now = datetime.now(timezone.utc).isoformat()
+
+    print(f"Baselining: {normalized}", file=sys.stderr)
+
+    # 1. Fetch HTML
+    print("  Fetching page...", file=sys.stderr)
+    fetch_result = fetch_page(normalized)
+    if fetch_result["error"]:
+        return {"error": f"Failed to fetch page: {fetch_result['error']}"}
+
+    html = fetch_result["content"]
+    status_code = fetch_result["status_code"]
+
+    # 2. Parse HTML for SEO elements
+    print("  Parsing SEO elements...", file=sys.stderr)
+    parsed = parse_html(html, normalized)
+
+    # 3. Compute hashes
+    html_hash = hashlib.sha256(html.encode()).hexdigest()
+    schema_canonical = json.dumps(parsed["schema"], sort_keys=True)
+    schema_hash = hashlib.sha256(schema_canonical.encode()).hexdigest()
+
+    # 4. Screenshot
+    screenshot_path = None
+    if not skip_screenshot:
+        print("  Capturing screenshot...", file=sys.stderr)
+        screenshot_filename = f"{uhash}_{now.replace(':', '-')}_baseline.png"
+        screenshot_path = os.path.join(SCREENSHOTS_DIR, screenshot_filename)
+        ss_result = capture_screenshot(
+            normalized, screenshot_path, viewport="desktop", full_page=True
+        )
+        if not ss_result["success"]:
+            print(f"  [WARN] Screenshot failed: {ss_result['error']}", file=sys.stderr)
+            screenshot_path = None
+
+    # 5. Core Web Vitals
+    cwv = None
+    if not skip_cwv:
+        print("  Fetching Core Web Vitals...", file=sys.stderr)
+        cwv = fetch_cwv(normalized)
+        if cwv:
+            print(f"  CWV score: {cwv['score']}/100, LCP: {cwv['lcp']}s", file=sys.stderr)
+        else:
+            print("  [WARN] CWV data unavailable", file=sys.stderr)
+
+    # 6. Build baseline data
+    headings = {
+        "h1": parsed["h1"],
+        "h2": parsed["h2"],
+        "h3": parsed["h3"],
+    }
+
+    baseline_data = {
+        "url": normalized,
+        "url_hash": uhash,
+        "created_at": now,
+        "html_hash": html_hash,
+        "title": parsed["title"],
+        "meta_description": parsed["meta_description"],
+        "canonical": parsed["canonical"],
+        "robots": parsed["meta_robots"],
+        "headings": headings,
+        "schema": parsed["schema"],
+        "schema_hash": schema_hash,
+        "open_graph": parsed["open_graph"],
+        "cwv": cwv,
+        "screenshot_path": screenshot_path,
+        "status_code": status_code,
+    }
+
+    # 7. Save to database
+    baseline_id = save_baseline(baseline_data)
+    baseline_data["id"] = baseline_id
+
+    print(f"  Baseline saved (ID: {baseline_id})", file=sys.stderr)
+
+    return baseline_data
+
+
+def format_summary(data: dict) -> dict:
+    """Format baseline data as a concise JSON summary for Claude."""
+    if "error" in data:
+        return {"error": data["error"]}
+
+    schema_types = []
+    for s in data.get("schema", []):
+        if isinstance(s, dict):
+            st = s.get("@type", "Unknown")
+            if isinstance(st, list):
+                schema_types.extend(st)
+            else:
+                schema_types.append(st)
+
+    summary = {
+        "id": data["id"],
+        "url": data["url"],
+        "created_at": data["created_at"],
+        "title": data.get("title"),
+        "h1": data["headings"]["h1"],
+        "h1_count": len(data["headings"]["h1"]),
+        "h2_count": len(data["headings"]["h2"]),
+        "h3_count": len(data["headings"]["h3"]),
+        "schema_count": len(data.get("schema", [])),
+        "schema_types": schema_types,
+        "canonical": data.get("canonical"),
+        "robots": data.get("robots"),
+        "og_tags": len(data.get("open_graph", {})),
+        "status_code": data.get("status_code"),
+        "screenshot": data.get("screenshot_path"),
+    }
+
+    if data.get("cwv"):
+        summary["cwv"] = {
+            "score": data["cwv"]["score"],
+            "lcp": data["cwv"]["lcp"],
+            "fcp": data["cwv"]["fcp"],
+            "cls": data["cwv"]["cls"],
+            "tbt": data["cwv"]["tbt"],
+        }
+
+    return summary
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python baseline.py <url> [--skip-cwv] [--skip-screenshot]")
+        sys.exit(1)
+
+    target_url = sys.argv[1]
+    skip_cwv = "--skip-cwv" in sys.argv
+    skip_ss = "--skip-screenshot" in sys.argv
+
+    result = capture_baseline(target_url, skip_cwv=skip_cwv, skip_screenshot=skip_ss)
+    summary = format_summary(result)
+    print(json.dumps(summary, indent=2))
