@@ -35,8 +35,8 @@ def fetch_page_safe(url: str) -> dict:
     try:
         from fetch_page import fetch_page
         result = fetch_page(url)
-        if result.get("error") and "SSL" in str(result["error"]):
-            raise Exception("SSL error, falling back to curl")
+        if result.get("error"):
+            raise Exception(f"fetch_page failed: {result['error']}")
         return result
     except Exception:
         pass
