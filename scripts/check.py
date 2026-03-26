@@ -195,7 +195,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "CRITICAL",
             "before": str(b_status),
             "after": str(c_status),
-            "recommendation": f"Page is returning HTTP {c_status}. Check server configuration and ensure the page is accessible.",
+            "recommendation": f"Page is returning HTTP {c_status}. Check server configuration and ensure the page is accessible. Run /seo-technical to diagnose.",
         })
 
     # Schema blocks removed
@@ -220,7 +220,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "CRITICAL",
             "before": baseline.get("canonical", ""),
             "after": current.get("canonical", ""),
-            "recommendation": "Canonical URL changed. Verify this is intentional. An incorrect canonical can deindex the page.",
+            "recommendation": "Canonical URL changed. Verify this is intentional. An incorrect canonical can deindex the page. Use /seo-technical to review.",
         })
     elif b_canonical and not c_canonical:
         diffs.append({
@@ -228,7 +228,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "CRITICAL",
             "before": baseline.get("canonical", ""),
             "after": "(removed)",
-            "recommendation": "Canonical tag was removed. Add it back to prevent duplicate content issues.",
+            "recommendation": "Canonical tag was removed. Add it back to prevent duplicate content issues. Use /seo-technical to review.",
         })
 
     # robots noindex added
@@ -240,7 +240,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "CRITICAL",
             "before": baseline.get("robots") or "(none)",
             "after": current.get("robots", ""),
-            "recommendation": "noindex was added to meta robots. This will remove the page from Google. Remove noindex unless intentional.",
+            "recommendation": "noindex was added to meta robots. This will remove the page from Google. Remove noindex unless intentional. Use /seo-technical to review.",
         })
 
     # H1 removed or changed
@@ -252,7 +252,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "CRITICAL",
             "before": b_h1[0] if b_h1 else "(none)",
             "after": "(removed)",
-            "recommendation": "H1 heading was removed. Every page needs exactly one H1 for SEO. Restore or add a new H1.",
+            "recommendation": "H1 heading was removed. Every page needs exactly one H1 for SEO. Restore or add a new H1. Use /seo-page to optimize.",
         })
     elif b_h1 and c_h1 and b_h1[0].strip().lower() != c_h1[0].strip().lower():
         diffs.append({
@@ -260,7 +260,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "CRITICAL",
             "before": b_h1[0],
             "after": c_h1[0],
-            "recommendation": "H1 text changed. Verify the new H1 contains your target keywords.",
+            "recommendation": "H1 text changed. Verify the new H1 contains your target keywords. Use /seo-page to optimize.",
         })
 
     # --- WARNING checks ---
@@ -274,7 +274,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "WARNING",
             "before": b_title,
             "after": c_title,
-            "recommendation": "Title tag changed. Ensure the new title includes target keywords and is under 60 characters.",
+            "recommendation": "Title tag changed. Ensure the new title includes target keywords and is under 60 characters. Use /seo-page to optimize.",
         })
     elif b_title and not c_title:
         diffs.append({
@@ -282,7 +282,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "CRITICAL",
             "before": b_title,
             "after": "(removed)",
-            "recommendation": "Title tag was removed. This is critical for SEO. Add a title tag immediately.",
+            "recommendation": "Title tag was removed. This is critical for SEO. Add a title tag immediately. Use /seo-page to optimize.",
         })
 
     # Description changed
@@ -294,7 +294,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "WARNING",
             "before": b_desc[:100] + ("..." if len(b_desc) > 100 else ""),
             "after": c_desc[:100] + ("..." if len(c_desc) > 100 else ""),
-            "recommendation": "Meta description changed. Ensure it's compelling and under 160 characters.",
+            "recommendation": "Meta description changed. Ensure it's compelling and under 160 characters. Use /seo-page to optimize.",
         })
 
     # CWV regression >20%
@@ -339,7 +339,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
                 "severity": "WARNING",
                 "before": f"{len(b_og)} OG tags",
                 "after": f"{len(c_og)} OG tags (removed: {', '.join(removed_og)})",
-                "recommendation": "Open Graph tags were removed. This affects how the page appears when shared on social media.",
+                "recommendation": "Open Graph tags were removed. This affects how the page appears when shared on social media. Use /seo-page to restore.",
             })
 
     # Schema modified (not removed)
@@ -350,7 +350,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "INFO",
             "before": "(not present)",
             "after": f"{st} schema added",
-            "recommendation": "New schema added. Validate with Google's Rich Results Test.",
+            "recommendation": "New schema added. Validate with Google's Rich Results Test. Use /seo-schema to review.",
         })
 
     if baseline.get("schema_hash") != current.get("schema_hash") and not removed_types and not added_types:
@@ -359,7 +359,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "WARNING",
             "before": f"{len(baseline.get('schema', []))} schema blocks",
             "after": f"{len(current.get('schema', []))} schema blocks (content modified)",
-            "recommendation": "Schema content was modified. Validate the updated schema with Google's Rich Results Test.",
+            "recommendation": "Schema content was modified. Validate the updated schema with Google's Rich Results Test. Use /seo-schema to review.",
         })
 
     # --- INFO checks ---
@@ -373,7 +373,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
             "severity": "INFO",
             "before": f"{len(b_h2)} H2 headings",
             "after": f"{len(c_h2)} H2 headings",
-            "recommendation": "H2 heading structure changed. Review for keyword relevance.",
+            "recommendation": "H2 heading structure changed. Review for keyword relevance. Use /seo-page to optimize.",
         })
 
     # Content hash changed (catch-all)
@@ -386,7 +386,7 @@ def compute_diffs(baseline: dict, current: dict) -> list[dict]:
                 "severity": "INFO",
                 "before": "Content hash: " + baseline["html_hash"][:12],
                 "after": "Content hash: " + current["html_hash"][:12],
-                "recommendation": "Page content changed. Review to ensure SEO-critical content is intact.",
+                "recommendation": "Page content changed. Review to ensure SEO-critical content is intact. Run /seo-audit for a full review.",
             })
 
     # Sort by severity
