@@ -93,17 +93,9 @@ When the user runs `/seo-drift history <url>`:
 
 1. Run:
    ```bash
-   python3 -c "
-   import sys; sys.path.insert(0, '$HOME/.claude/skills/seo-drift/scripts')
-   from db import get_all_baselines, get_check_history, normalize_url
-   import json
-   url = '$URL'
-   baselines = get_all_baselines(url)
-   checks = get_check_history(url)
-   print(json.dumps({'baselines': baselines, 'checks': checks}, indent=2, default=str))
-   "
+   python3 ~/.claude/skills/seo-drift/scripts/history.py "<url>"
    ```
-   Replace `$URL` with the actual URL.
+   Replace `<url>` with the actual URL.
 
 2. Present as a timeline:
    ```

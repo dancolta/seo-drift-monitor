@@ -222,6 +222,11 @@ python3 -m playwright install chromium
 git clone https://github.com/dancolta/seo-drift-monitor.git ~/.claude/skills/seo-drift
 ```
 
+```bash
+# Set your Google PageSpeed Insights API key
+export PSI_API_KEY="your-api-key-here"
+```
+
 Immediately available -- Claude Code auto-discovers skills in `~/.claude/skills/`.
 
 ---
@@ -273,7 +278,7 @@ Imports from the parent `seo` skill:
 
 ### CWV Data Source
 
-Uses **Google PageSpeed Insights API v5** (not local Lighthouse). Results match [pagespeed.web.dev](https://pagespeed.web.dev) so prospects can verify independently. Mobile strategy by default. API key required (hardcoded in `cwv.py`). 3 retries with 10s/20s exponential backoff.
+Uses **Google PageSpeed Insights API v5** (not local Lighthouse). Results match [pagespeed.web.dev](https://pagespeed.web.dev) so prospects can verify independently. Mobile strategy by default. API key required (set `PSI_API_KEY` environment variable). 3 retries with 10s/20s exponential backoff.
 
 ---
 

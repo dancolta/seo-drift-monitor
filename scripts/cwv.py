@@ -7,13 +7,14 @@ Uses curl to avoid Python SSL certificate issues.
 """
 
 import json
+import os
 import subprocess
 import sys
 import time
 import urllib.parse
 
-# PageSpeed Insights API key (Google Cloud project)
-PSI_API_KEY = "AIzaSyAOi6STdZHm04isQK12oCnXYKL7J5n4scQ"
+# PageSpeed Insights API key (from environment variable)
+PSI_API_KEY = os.environ.get("PSI_API_KEY")
 PSI_TIMEOUT = 90  # seconds per attempt
 
 
@@ -28,6 +29,10 @@ def fetch_cwv(url: str, strategy: str = "mobile") -> dict | None:
     Returns:
         Dictionary with {score, fcp, lcp, si, tbt, cls, extras} or None on failure.
     """
+    if not PSI_API_KEY:
+        print("  [WARN] PSI_API_KEY environment variable not set. Skipping CWV fetch.", file=sys.stderr)
+        return None
+
     psi_url = (
         "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?"
         + urllib.parse.urlencode({
