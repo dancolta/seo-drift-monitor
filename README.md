@@ -1,6 +1,8 @@
 # SEO Drift Monitor
 
-![SEO Drift Monitor demo](seo-drift-monitor.gif)
+<p align="center">
+  <img src="seo-drift-monitor.gif" width="720" alt="SEO Drift Monitor demo" />
+</p>
 
 **Detect when page changes break your SEO.** A defensive extension for [claude-seo](https://github.com/AgriciDaniel/claude-seo).
 
