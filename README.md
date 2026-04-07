@@ -1,5 +1,7 @@
 # SEO Drift Monitor
 
+![SEO Drift Monitor demo](seo-drift-monitor.gif)
+
 **Detect when page changes break your SEO.** A defensive extension for [claude-seo](https://github.com/AgriciDaniel/claude-seo).
 
 Other SEO tools optimize. This one protects what you've already optimized.
