@@ -1,14 +1,34 @@
 # SEO Drift Monitor
 
-<p align="center">
-  <img src="seo-drift-monitor.gif" width="720" alt="SEO Drift Monitor demo" />
-</p>
+[![Claude Code Skill](https://img.shields.io/badge/Claude_Code-Skill-orange)](https://docs.anthropic.com/en/docs/claude-code) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![GitHub stars](https://img.shields.io/github/stars/dancolta/seo-drift-monitor?style=social)](https://github.com/dancolta/seo-drift-monitor)
 
-**Detect when page changes break your SEO.** A defensive extension for [claude-seo](https://github.com/AgriciDaniel/claude-seo).
+**Git for SEO. Baseline your page, catch the silent regressions your deploys ship.**
 
-Other SEO tools optimize. This one protects what you've already optimized.
+> Not a crawler. Not a rank tracker. Not a Lighthouse wrapper. This catches the moment a deploy silently flipped your canonical, dropped a JSON-LD block, or shipped `noindex` to prod — before Google notices.
 
-> Extension for the [claude-seo](https://github.com/AgriciDaniel/claude-seo) skill ecosystem for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
+<img src="seo-drift-monitor.gif" width="960" alt="SEO Drift Monitor catching a critical regression on a deploy" />
+
+Extension for the [claude-seo](https://github.com/AgriciDaniel/claude-seo) skill ecosystem for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
+
+```bash
+git clone https://github.com/dancolta/seo-drift-monitor.git ~/.claude/skills/seo-drift
+```
+
+---
+
+## How it compares
+
+|  | SEO Drift Monitor | ContentKing | Screaming Frog | Manual (curl + eyeball) |
+|---|:---:|:---:|:---:|:---:|
+| Explicit baseline you commit to git | ✓ | ✗ | ✗ | partial |
+| Catches accidental `noindex` at deploy time | ✓ | partial | ✗ | partial |
+| Severity-classified diffs (Critical/Warning/Info) | ✓ | partial | ✗ | ✗ |
+| Fix recommendations wired to claude-seo sub-skills | ✓ | ✗ | ✗ | ✗ |
+| Runs in CI / pre-merge / agent loop | ✓ | ✗ | partial | partial |
+| Zero monthly cost | ✓ | ✗ ($200+/mo) | ✗ (license) | ✓ |
+| Full-site crawl | ✗ (by design) | ✓ | ✓ | ✗ |
+| Keyword/ranking tracking | ✗ (by design) | ✓ | ✗ | ✗ |
+| Owned by developer, not marketing | ✓ | ✗ | partial | ✓ |
 
 ---
 
